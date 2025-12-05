@@ -2,9 +2,17 @@ package main
 
 //go:generate go run install_tools.go
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"github.com/ppowo/ruv/cmd"
+)
 
 func main() {
-	fmt.Println("Hello from ruv!")
-	fmt.Println("This is a Go CLI tool built with mage.")
+	// Execute Cobra command tree
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
