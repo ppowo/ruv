@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/eiannone/keyboard"
 	"github.com/ppowo/ruv/audio"
 	"github.com/ppowo/ruv/stations"
 	"github.com/spf13/cobra"
@@ -50,7 +51,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid station: %w", err)
 	}
 
-	fmt.Printf("🎵 Playing %s...\n", station.Name)
+	fmt.Printf("🎵 Playing %s...\n", station.Description)
 
 	// Create streamer
 	streamer := audio.NewStreamer()
@@ -62,24 +63,90 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to start stream: %w", err)
 	}
 
-	// Handle Ctrl+C gracefully
-	handleSignals(streamer)
+	// Handle both keyboard input and signals
+	handleEvents(streamer)
 
 	return nil
 }
 
-// handleSignals waits for Ctrl+C and cleans up
-func handleSignals(streamer *audio.Streamer) {
+// handleEvents manages keyboard input and signals
+func handleEvents(streamer *audio.Streamer) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	fmt.Println("\nPress Ctrl+C to stop")
+	// Initialize keyboard
+	if err := keyboard.Open(); err != nil {
+		fmt.Printf("Warning: keyboard input unavailable: %v\n", err)
+		fmt.Println("\nPress Ctrl+C to stop")
+		<-sigChan
+		fmt.Println("\n\n⏹ Stopping stream...")
+		streamer.Close()
+		fmt.Println("Stream stopped.")
+		return
+	}
+	defer keyboard.Close()
 
-	<-sigChan
+	fmt.Println("\nControls: [Space/P] Pause/Resume | [Ctrl+C] Exit")
 
-	fmt.Println("\n\n⏹ Stopping stream...")
-	streamer.Close()
-	fmt.Println("Stream stopped.")
+	// Channels for keyboard events and exit signal
+	keyChan := make(chan rune, 1)
+	exitChan := make(chan bool, 1)
+
+	// Start keyboard listener in separate goroutine
+	go func() {
+		for {
+			char, key, err := keyboard.GetKey()
+			if err != nil {
+				return
+			}
+
+			// Check for Ctrl+C (can be char code 3 or KeyCtrlC depending on terminal)
+			if char == 3 || key == keyboard.KeyCtrlC {
+				exitChan <- true
+				return
+			}
+
+			// Send relevant keys to channel
+			if char == ' ' || char == 'p' || char == 'P' || key == keyboard.KeySpace {
+				keyChan <- char
+			}
+		}
+	}()
+
+	// Event loop - handle signals and keyboard input
+	for {
+		select {
+		case <-sigChan:
+			// Exit application (for external signals)
+			fmt.Println("\n\n⏹ Stopping stream...")
+			streamer.Close()
+			fmt.Println("Stream stopped.")
+			return
+
+		case <-exitChan:
+			// Exit application (from Ctrl+C in keyboard)
+			fmt.Println("\n\n⏹ Stopping stream...")
+			streamer.Close()
+			fmt.Println("Stream stopped.")
+			return
+
+		case <-keyChan:
+			// Handle pause/unpause
+			if streamer.IsPaused() {
+				if err := streamer.Unpause(); err != nil {
+					fmt.Printf("\nError resuming: %v\n", err)
+				} else {
+					fmt.Print("\r⏯ Resuming stream...                    \n")
+				}
+			} else {
+				if err := streamer.Pause(); err != nil {
+					fmt.Printf("\nError pausing: %v\n", err)
+				} else {
+					fmt.Print("\r⏸ Stream paused (press Space/P to resume)\n")
+				}
+			}
+		}
+	}
 }
 
 // Execute executes the root command

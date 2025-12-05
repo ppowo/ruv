@@ -34,3 +34,6 @@ go.work.sum
 # Build artifacts
 /bin/
 /bin
+
+# Claude Code artifacts
+.claude/

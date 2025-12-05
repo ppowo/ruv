@@ -3,15 +3,19 @@ package audio
 import (
 	"fmt"
 	"os/exec"
+	"sync"
 
 	"github.com/ebitengine/oto/v3"
 )
 
 // Streamer handles streaming audio from a URL and playing it
 type Streamer struct {
-	player  *oto.Player
-	context *oto.Context
-	cmd     *exec.Cmd
+	player     *oto.Player
+	context    *oto.Context
+	cmd        *exec.Cmd
+	url        string       // Store URL for restart on unpause
+	isPaused   bool         // Track pause state
+	pauseMutex sync.RWMutex // Protect concurrent access
 }
 
 // NewStreamer creates a new audio streamer
@@ -21,6 +25,9 @@ func NewStreamer() *Streamer {
 
 // Stream streams audio from a URL using ffmpeg
 func (s *Streamer) Stream(url string) error {
+	// Store URL for pause/unpause functionality
+	s.url = url
+
 	// Check if ffmpeg is available
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
 		return fmt.Errorf("ffmpeg is required but not installed. Please install ffmpeg and try again")
@@ -94,4 +101,65 @@ func (s *Streamer) Close() error {
 	}
 
 	return nil
+}
+
+// Pause pauses the stream (stops ffmpeg but keeps context alive)
+func (s *Streamer) Pause() error {
+	s.pauseMutex.Lock()
+	defer s.pauseMutex.Unlock()
+
+	if s.isPaused {
+		return nil // Already paused
+	}
+
+	// Stop ffmpeg but keep context alive for faster resume
+	if s.player != nil {
+		s.player.Pause()
+	}
+	if s.cmd != nil && s.cmd.Process != nil {
+		s.cmd.Process.Kill()
+		s.cmd.Wait() // Avoid zombie processes
+		s.cmd = nil
+	}
+
+	s.isPaused = true
+	return nil
+}
+
+// Unpause resumes the stream from live (restarts ffmpeg)
+func (s *Streamer) Unpause() error {
+	s.pauseMutex.Lock()
+	defer s.pauseMutex.Unlock()
+
+	if !s.isPaused {
+		return nil // Not paused
+	}
+
+	// Restart ffmpeg (reuse existing context)
+	cmd := exec.Command("ffmpeg", "-i", s.url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
+	s.cmd = cmd
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to get stdout: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to restart ffmpeg: %w", err)
+	}
+
+	// Create new player with existing context
+	player := s.context.NewPlayer(stdout)
+	s.player = player
+	player.Play()
+
+	s.isPaused = false
+	return nil
+}
+
+// IsPaused returns whether the stream is currently paused
+func (s *Streamer) IsPaused() bool {
+	s.pauseMutex.RLock()
+	defer s.pauseMutex.RUnlock()
+	return s.isPaused
 }
