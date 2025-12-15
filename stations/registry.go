@@ -64,11 +64,10 @@ func GetStation(name string) (*models.Station, error) {
 		return nil, fmt.Errorf("station name cannot be empty")
 	}
 
-	// Search for station (case-insensitive)
-	for _, station := range stations {
+	// Search for station
+	for i, station := range stations {
 		if station.Name == name {
-			// Return a copy to prevent external modification
-			return &station, nil
+			return &stations[i], nil
 		}
 	}
 

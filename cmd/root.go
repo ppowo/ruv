@@ -46,11 +46,6 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("station not found: %w", err)
 	}
 
-	// Validate station
-	if err := station.Validate(); err != nil {
-		return fmt.Errorf("invalid station: %w", err)
-	}
-
 	fmt.Printf("🎵 Playing %s...\n", station.Description)
 
 	// Create streamer
@@ -79,9 +74,7 @@ func handleEvents(streamer *audio.Streamer) {
 		fmt.Printf("Warning: keyboard input unavailable: %v\n", err)
 		fmt.Println("\nPress Ctrl+C to stop")
 		<-sigChan
-		fmt.Println("\n\n⏹ Stopping stream...")
-		streamer.Close()
-		fmt.Println("Stream stopped.")
+		stopStream(streamer)
 		return
 	}
 	defer keyboard.Close()
@@ -117,17 +110,11 @@ func handleEvents(streamer *audio.Streamer) {
 	for {
 		select {
 		case <-sigChan:
-			// Exit application (for external signals)
-			fmt.Println("\n\n⏹ Stopping stream...")
-			streamer.Close()
-			fmt.Println("Stream stopped.")
+			stopStream(streamer)
 			return
 
 		case <-exitChan:
-			// Exit application (from Ctrl+C in keyboard)
-			fmt.Println("\n\n⏹ Stopping stream...")
-			streamer.Close()
-			fmt.Println("Stream stopped.")
+			stopStream(streamer)
 			return
 
 		case <-keyChan:
@@ -149,14 +136,17 @@ func handleEvents(streamer *audio.Streamer) {
 	}
 }
 
+func stopStream(streamer *audio.Streamer) {
+	fmt.Println("\n\n⏹ Stopping stream...")
+	streamer.Close()
+	fmt.Println("Stream stopped.")
+}
+
 // Execute executes the root command
 func Execute() error {
 	return rootCmd.Execute()
 }
 
-func init() {
-	// Add root command flags here if needed
-}
 
 // GetRootCmd returns the root command
 func GetRootCmd() *cobra.Command {

@@ -23,6 +23,10 @@ func NewStreamer() *Streamer {
 	return &Streamer{}
 }
 
+func (s *Streamer) newFfmpegCmd() *exec.Cmd {
+	return exec.Command("ffmpeg", "-i", s.url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
+}
+
 // Stream streams audio from a URL using ffmpeg
 func (s *Streamer) Stream(url string) error {
 	// Store URL for pause/unpause functionality
@@ -50,23 +54,16 @@ func (s *Streamer) Stream(url string) error {
 	// Wait for the context to be ready
 	<-readyChan
 
-	// Create ffmpeg command
-	// -i url: input from URL
-	// -f s16le: output as 16-bit signed little-endian PCM
-	// -ar 44100: sample rate 44100 Hz
-	// -ac 2: stereo (2 channels)
-	// -: output to stdout
-	cmd := exec.Command("ffmpeg", "-i", url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
-	s.cmd = cmd
+	s.cmd = s.newFfmpegCmd()
 
 	// Set up stdout for the raw PCM stream
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to get stdout: %w", err)
 	}
 
 	// Start the command
-	if err := cmd.Start(); err != nil {
+	if err := s.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start ffmpeg: %w", err)
 	}
 
@@ -135,16 +132,14 @@ func (s *Streamer) Unpause() error {
 		return nil // Not paused
 	}
 
-	// Restart ffmpeg (reuse existing context)
-	cmd := exec.Command("ffmpeg", "-i", s.url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
-	s.cmd = cmd
+	s.cmd = s.newFfmpegCmd()
 
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to get stdout: %w", err)
 	}
 
-	if err := cmd.Start(); err != nil {
+	if err := s.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to restart ffmpeg: %w", err)
 	}
 

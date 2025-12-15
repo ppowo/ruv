@@ -64,7 +64,7 @@ func getInstallDir() (string, error) {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	bioDir := homeDir + "/.bio/bin"
+	bioDir := filepath.Join(homeDir, ".bio", "bin")
 	if info, err := os.Stat(bioDir); err == nil && info.IsDir() {
 		return bioDir, nil
 	}
@@ -72,7 +72,7 @@ func getInstallDir() (string, error) {
 	var candidateDir string
 	switch runtime.GOOS {
 	case "linux":
-		candidateDir = homeDir + "/.local/bin"
+		candidateDir = filepath.Join(homeDir, ".local", "bin")
 	case "windows":
 		localAppData := os.Getenv("LOCALAPPDATA")
 		if localAppData == "" {
@@ -112,11 +112,8 @@ func Install() error {
 		binary = "ruv.exe"
 	}
 
-	src := "bin/" + binary
-	dst := installDir + "/" + binary
-	if runtime.GOOS == "windows" {
-		dst = installDir + "\\" + binary
-	}
+	src := filepath.Join("bin", binary)
+	dst := filepath.Join(installDir, binary)
 
 	if err := sh.Copy(dst, src); err != nil {
 		return fmt.Errorf("failed to copy binary: %w", err)
