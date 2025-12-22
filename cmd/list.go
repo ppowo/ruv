@@ -2,30 +2,22 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
+	"os"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/ppowo/ruv/stations"
 )
 
 func runList() error {
-	// Get all stations from registry
 	stationList := stations.GetStations()
 
-	// Print header
-	fmt.Println("Available Radio Stations:")
-	fmt.Println(strings.Repeat("-", 70))
-	fmt.Printf("%-20s | %s\n", "NAME", "DESCRIPTION")
-	fmt.Println(strings.Repeat("-", 70))
-
-	// Print each station
+	table := tablewriter.NewWriter(os.Stdout)
+	table.Header([]string{"Name", "Description"})
 	for _, station := range stationList {
-		fmt.Printf("%-20s | %s\n",
-			station.Name,
-			station.Description)
+		table.Append([]string{station.Name, station.Description})
 	}
-
-	fmt.Println(strings.Repeat("-", 70))
-	fmt.Printf("\nTotal: %d station(s)\n", len(stationList))
+	table.Footer([]string{"Total", fmt.Sprintf("%d station(s)", len(stationList))})
+	table.Render()
 
 	return nil
 }
