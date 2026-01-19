@@ -79,7 +79,7 @@ func handleEvents(streamer *audio.Streamer) {
 	}
 	defer keyboard.Close()
 
-	fmt.Println("\nControls: [Space/P] Pause/Resume | [Ctrl+C] Exit")
+	fmt.Println("Controls: [Space/P] Pause/Resume | [Ctrl+C] Exit")
 
 	// Channels for keyboard events and exit signal
 	keyChan := make(chan rune, 1)
@@ -123,13 +123,13 @@ func handleEvents(streamer *audio.Streamer) {
 				if err := streamer.Unpause(); err != nil {
 					fmt.Printf("\nError resuming: %v\n", err)
 				} else {
-					fmt.Print("\r⏯ Resuming stream...                    \n")
+					fmt.Print("\r⏯ Resuming stream...                    ")
 				}
 			} else {
 				if err := streamer.Pause(); err != nil {
 					fmt.Printf("\nError pausing: %v\n", err)
 				} else {
-					fmt.Print("\r⏸ Stream paused (press Space/P to resume)\n")
+					fmt.Print("\r⏸ Stream paused (press Space/P to resume)")
 				}
 			}
 		}
