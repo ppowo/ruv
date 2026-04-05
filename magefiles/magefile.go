@@ -48,11 +48,17 @@ func Build() error {
 		binary = "bin/ruv.exe"
 	}
 
+	// Inject version from git tag, falling back to "dev"
+	version := "dev"
+	if v, err := sh.Output("git", "describe", "--tags", "--always", "--dirty"); err == nil && v != "" {
+		version = v
+	}
+	ldflags := fmt.Sprintf("-s -w -X github.com/ppowo/ruv/cmd.Version=%s", version)
 	// Build with optimization flags to reduce binary size:
 	// -ldflags="-s -w" removes symbol table and debug info
 	// -trimpath removes file system paths from binary
 	return sh.Run("go", "build",
-		"-ldflags=-s -w",
+		"-ldflags="+ldflags,
 		"-trimpath",
 		"-o", binary,
 		".")
@@ -80,7 +86,7 @@ func getInstallDir() (string, error) {
 		}
 		candidateDir = localAppData + "\\Microsoft\\WindowsApps"
 	case "darwin":
-		return "", fmt.Errorf("on macOS, please create ~/.bio/bin first, or use sudo to install to /usr/local/bin")
+		candidateDir = filepath.Join(homeDir, ".local", "bin")
 	default:
 		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}

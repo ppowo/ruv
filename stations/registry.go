@@ -2,7 +2,7 @@ package stations
 
 import (
 	"fmt"
-
+	"strings"
 	"github.com/ppowo/ruv/models"
 )
 
@@ -66,7 +66,7 @@ func GetStation(name string) (*models.Station, error) {
 
 	// Search for station
 	for i, station := range stations {
-		if station.Name == name {
+		if strings.EqualFold(station.Name, name) {
 			return &stations[i], nil
 		}
 	}

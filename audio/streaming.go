@@ -1,10 +1,11 @@
 package audio
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"sync"
-
 	"github.com/ebitengine/oto/v3"
 )
 
@@ -24,7 +25,9 @@ func NewStreamer() *Streamer {
 }
 
 func (s *Streamer) newFfmpegCmd() *exec.Cmd {
-	return exec.Command("ffmpeg", "-i", s.url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
+	cmd := exec.Command("ffmpeg", "-i", s.url, "-f", "s16le", "-ar", "44100", "-ac", "2", "-")
+	cmd.Stderr = io.Discard
+	return cmd
 }
 
 // Stream streams audio from a URL using ffmpeg
@@ -78,26 +81,35 @@ func (s *Streamer) Stream(url string) error {
 
 // Close stops the playback and cleans up resources
 func (s *Streamer) Close() error {
+	var errs []error
 	// Pause the player (no need to close in oto v3.4+)
 	if s.player != nil {
 		s.player.Pause()
 		s.player = nil
 	}
-
 	// Kill the ffmpeg process and wait for it to finish
 	if s.cmd != nil && s.cmd.Process != nil {
-		s.cmd.Process.Kill()
-		s.cmd.Wait() // Wait for process to finish to avoid zombies
+		if err := s.cmd.Process.Kill(); err != nil {
+			errs = append(errs, fmt.Errorf("failed to kill ffmpeg: %w", err))
+		}
+		if err := s.cmd.Wait(); err != nil {
+			// Ignore "signal: killed" — that's expected after Kill()
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) {
+				errs = append(errs, fmt.Errorf("failed to wait for ffmpeg: %w", err))
+			}
+		}
 		s.cmd = nil
 	}
-
 	// Close the audio context to release audio device resources
 	if s.context != nil {
-		s.context.Suspend()
+		if err := s.context.Suspend(); err != nil {
+			errs = append(errs, fmt.Errorf("failed to suspend audio context: %w", err))
+		}
 		s.context = nil
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // Pause pauses the stream (stops ffmpeg but keeps context alive)
@@ -132,17 +144,20 @@ func (s *Streamer) Unpause() error {
 		return nil // Not paused
 	}
 
-	s.cmd = s.newFfmpegCmd()
+	// Clean up old paused player before creating a new one
+	if s.player != nil {
+		s.player.Pause()
+		s.player = nil
+	}
 
+	s.cmd = s.newFfmpegCmd()
 	stdout, err := s.cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to get stdout: %w", err)
 	}
-
 	if err := s.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to restart ffmpeg: %w", err)
 	}
-
 	// Create new player with existing context
 	player := s.context.NewPlayer(stdout)
 	s.player = player

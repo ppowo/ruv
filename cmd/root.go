@@ -4,31 +4,33 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
-
 	"github.com/eiannone/keyboard"
 	"github.com/ppowo/ruv/audio"
 	"github.com/ppowo/ruv/stations"
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "ruv [station]",
-	Short: "Stream internet radio stations",
-	Long: `Stream internet radio stations using ffmpeg.
+// Version is set at build time via -ldflags
+var Version = "dev"
 
-Usage:
-  ruv          List all available stations
-  ruv reso     Play Resonance FM
-  ruv rese     Play Resonance Extra
-  ruv ntso     Play NTS Radio 1
-  ruv ntst     Play NTS Radio 2
-  ruv lyll     Play LYL Radio
-  ruv cash     Play Cashmere Radio
-  ruv lake     Play The Lake Radio
-  ruv alha     Play Radio Alhara`,
-	Args: cobra.MaximumNArgs(1),
-	RunE: runRoot,
+var rootCmd = &cobra.Command{
+	Use:     "ruv [station]",
+	Short:   "Stream internet radio stations",
+	Long:    buildLongHelp(),
+	Version: Version,
+	Args:    cobra.MaximumNArgs(1),
+	RunE:    runRoot,
+}
+
+func buildLongHelp() string {
+	var b strings.Builder
+	b.WriteString("Stream internet radio stations using ffmpeg.\n\nUsage:\n  ruv          List all available stations")
+	for _, s := range stations.GetStations() {
+		fmt.Fprintf(&b, "\n  ruv %-8s Play %s", s.Name, s.Description)
+	}
+	return b.String()
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -145,10 +147,4 @@ func stopStream(streamer *audio.Streamer) {
 // Execute executes the root command
 func Execute() error {
 	return rootCmd.Execute()
-}
-
-
-// GetRootCmd returns the root command
-func GetRootCmd() *cobra.Command {
-	return rootCmd
 }
