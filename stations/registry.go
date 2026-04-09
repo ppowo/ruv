@@ -3,10 +3,11 @@ package stations
 import (
 	"fmt"
 	"strings"
+
 	"github.com/ppowo/ruv/models"
 )
 
-// stations is a private slice containing all available radio stations
+// stations is a private slice containing all available radio stations.
 var stations = []models.Station{
 	{
 		Name:        "reso",
@@ -29,19 +30,19 @@ var stations = []models.Station{
 		URL:         "https://streams.radiomast.io/nts2/hls.m3u8",
 	},
 	{
-		Name:        "lyll",
-		Description: "LYL Radio - Community radio from London",
-		URL:         "https://radio.lyl.live/hls/aac_hifi.m3u8",
+		Name:        "nood",
+		Description: "Noods Radio - Music-heavy community radio from Bristol",
+		URL:         "https://noods-radio.radiocult.fm/stream",
 	},
 	{
-		Name:        "cash",
-		Description: "Cashmere Radio - Berlin-based online radio",
-		URL:         "https://cashmereradio.out.airtime.pro/cashmereradio_b",
+		Name:        "drmm",
+		Description: "Intergalactic FM Dream Machine - Experimental music from The Hague",
+		URL:         "https://radio.intergalactic.fm/3A",
 	},
 	{
-		Name:        "lake",
-		Description: "The Lake Radio - Online radio station",
-		URL:         "http://hyades.shoutca.st:8627/stream",
+		Name:        "9128",
+		Description: "9128.live - Curated ambient/drone stream with zero talk",
+		URL:         "https://streams.radio.co/s0aa1e6f4a/listen",
 	},
 	{
 		Name:        "alha",
@@ -50,23 +51,34 @@ var stations = []models.Station{
 	},
 }
 
-// GetStations returns a copy of all available stations
+// stationAliases keeps older station codes working after curation updates.
+var stationAliases = map[string]string{
+	"lyll": "nood",
+	"cash": "drmm",
+	"lake": "9128",
+}
+
+// GetStations returns a copy of all available stations.
 func GetStations() []models.Station {
-	// Return a copy to prevent external modification
+	// Return a copy to prevent external modification.
 	result := make([]models.Station, len(stations))
 	copy(result, stations)
 	return result
 }
 
-// GetStation looks up a station by name (case-insensitive)
+// GetStation looks up a station by name or alias (case-insensitive).
 func GetStation(name string) (*models.Station, error) {
 	if name == "" {
 		return nil, fmt.Errorf("station name cannot be empty")
 	}
 
-	// Search for station
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	if canonical, ok := stationAliases[normalized]; ok {
+		normalized = canonical
+	}
+
 	for i, station := range stations {
-		if strings.EqualFold(station.Name, name) {
+		if strings.EqualFold(station.Name, normalized) {
 			return &stations[i], nil
 		}
 	}

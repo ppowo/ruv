@@ -6,7 +6,7 @@ A lightweight command-line radio streamer for internet radio stations.
 
 - Stream internet radio directly from your terminal
 - Support for multiple formats (ICY/MP3, HLS/M3U8)
-- Simple 4-letter station codes
+- Simple 4-character station codes
 - Clean resource management (no memory leaks)
 
 ## Requirements
@@ -42,9 +42,9 @@ ruv reso     # Resonance FM
 ruv rese     # Resonance Extra
 ruv ntso     # NTS Radio 1
 ruv ntst     # NTS Radio 2
-ruv lyll     # LYL Radio
-ruv cash     # Cashmere Radio
-ruv lake     # The Lake Radio
+ruv nood     # Noods Radio
+ruv drmm     # Intergalactic FM Dream Machine
+ruv 9128     # 9128.live
 ruv alha     # Radio Alhara
 
 # Stop playback
@@ -59,10 +59,12 @@ Ctrl+C
 | `rese` | Resonance Extra | London |
 | `ntso` | NTS Radio 1 | Global |
 | `ntst` | NTS Radio 2 | Global |
-| `lyll` | LYL Radio | London |
-| `cash` | Cashmere Radio | Berlin |
-| `lake` | The Lake Radio | Online |
+| `nood` | Noods Radio | Bristol |
+| `drmm` | Intergalactic FM Dream Machine | The Hague |
+| `9128` | 9128.live | Online |
 | `alha` | Radio Alhara | Palestine |
+
+Legacy aliases are still supported: `lyll` → `nood`, `cash` → `drmm`, `lake` → `9128`.
 
 ## How It Works
 
