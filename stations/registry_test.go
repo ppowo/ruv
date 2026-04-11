@@ -2,7 +2,7 @@ package stations
 
 import "testing"
 
-func TestGetStationSupportsCanonicalCodesAndLegacyAliases(t *testing.T) {
+func TestGetStation(t *testing.T) {
 	tests := []struct {
 		input    string
 		wantCode string
@@ -10,11 +10,8 @@ func TestGetStationSupportsCanonicalCodesAndLegacyAliases(t *testing.T) {
 		{input: "nood", wantCode: "nood"},
 		{input: "drmm", wantCode: "drmm"},
 		{input: "9128", wantCode: "9128"},
-		{input: "lyll", wantCode: "nood"},
-		{input: "cash", wantCode: "drmm"},
-		{input: "lake", wantCode: "9128"},
 		{input: "NOOD", wantCode: "nood"},
-		{input: "  cash  ", wantCode: "drmm"},
+		{input: "  nood  ", wantCode: "nood"},
 	}
 
 	for _, tt := range tests {

@@ -51,13 +51,6 @@ var stations = []models.Station{
 	},
 }
 
-// stationAliases keeps older station codes working after curation updates.
-var stationAliases = map[string]string{
-	"lyll": "nood",
-	"cash": "drmm",
-	"lake": "9128",
-}
-
 // GetStations returns a copy of all available stations.
 func GetStations() []models.Station {
 	// Return a copy to prevent external modification.
@@ -66,16 +59,13 @@ func GetStations() []models.Station {
 	return result
 }
 
-// GetStation looks up a station by name or alias (case-insensitive).
+// GetStation looks up a station by name (case-insensitive).
 func GetStation(name string) (*models.Station, error) {
 	if name == "" {
 		return nil, fmt.Errorf("station name cannot be empty")
 	}
 
 	normalized := strings.ToLower(strings.TrimSpace(name))
-	if canonical, ok := stationAliases[normalized]; ok {
-		normalized = canonical
-	}
 
 	for i, station := range stations {
 		if strings.EqualFold(station.Name, normalized) {

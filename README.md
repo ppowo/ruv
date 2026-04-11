@@ -53,19 +53,16 @@ Ctrl+C
 
 ## Available Stations
 
-| Code | Station | Location |
-|------|---------|----------|
-| `reso` | Resonance FM | London |
-| `rese` | Resonance Extra | London |
-| `ntso` | NTS Radio 1 | Global |
-| `ntst` | NTS Radio 2 | Global |
-| `nood` | Noods Radio | Bristol |
-| `drmm` | Intergalactic FM Dream Machine | The Hague |
-| `9128` | 9128.live | Online |
-| `alha` | Radio Alhara | Palestine |
-
-Legacy aliases are still supported: `lyll` → `nood`, `cash` → `drmm`, `lake` → `9128`.
-
+| Code | Station |
+|------|---------|
+| `reso` | Resonance FM |
+| `rese` | Resonance Extra |
+| `ntso` | NTS Radio 1 |
+| `ntst` | NTS Radio 2 |
+| `nood` | Noods Radio |
+| `drmm` | Intergalactic FM Dream Machine |
+| `9128` | 9128.live |
+| `alha` | Radio Alhara |
 ## How It Works
 
 `ruv` uses ffmpeg to handle stream decoding and the [oto](https://github.com/ebitengine/oto) library for cross-platform audio playback. This approach supports a wide variety of streaming formats without complex codec implementation.
