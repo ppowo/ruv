@@ -52,3 +52,17 @@ func TestGetStationsReturnsCopy(t *testing.T) {
 		t.Fatalf("GetStations() returned mutable backing data, first station = %q", fresh[0].Name)
 	}
 }
+
+func TestGetStationReturnsCopy(t *testing.T) {
+	station, err := GetStation("reso")
+	if err != nil {
+		t.Fatalf("GetStation(\"reso\") returned error: %v", err)
+	}
+
+	station.Name = "changed"
+
+	fresh, _ := GetStation("reso")
+	if fresh.Name != "reso" {
+		t.Fatalf("GetStation returned mutable backing data, first station = %q", fresh.Name)
+	}
+}

@@ -60,18 +60,18 @@ func GetStations() []models.Station {
 }
 
 // GetStation looks up a station by name (case-insensitive).
-func GetStation(name string) (*models.Station, error) {
+// Returns a copy — mutations do not affect the internal registry.
+func GetStation(name string) (models.Station, error) {
 	if name == "" {
-		return nil, fmt.Errorf("station name cannot be empty")
+		return models.Station{}, fmt.Errorf("station name cannot be empty")
 	}
 
 	normalized := strings.ToLower(strings.TrimSpace(name))
-
 	for i, station := range stations {
 		if strings.EqualFold(station.Name, normalized) {
-			return &stations[i], nil
+			return stations[i], nil
 		}
 	}
 
-	return nil, fmt.Errorf("station %q not found", name)
+	return models.Station{}, fmt.Errorf("station %q not found", name)
 }
